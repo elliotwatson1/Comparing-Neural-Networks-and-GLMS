@@ -1,0 +1,90 @@
+
+> library(keras)
+
+> library(tfruns)
+
+> library(dplyr)
+
+> # Define hyperparameters as flags
+> FLAGS <- flags(
++   flag_integer("units1", 64),
++   flag_integer("units2", 32),
++   flag_numeric("dropout1", 0.3 .... [TRUNCATED] 
+
+> # ---------------------------
+> 
+> 
+> # ---------------------------
+> # MODEL BUILDING
+> # ---------------------------
+> model <- keras_model_sequen .... [TRUNCATED] 
+
+> model$add(layer_dense(units = FLAGS$units1, activation = "relu", input_shape = c(ncol(x_train))))
+
+> model$add(layer_dropout(rate = FLAGS$dropout1))
+
+> model$add(layer_dense(units = FLAGS$units2, activation = "relu"))
+
+> model$add(layer_dense(units = 1))
+
+> model$compile(
++   loss = "mse",
++   optimizer = optimizer_adam(learning_rate = FLAGS$lr),
++   metrics = list("mean_squared_error", "mean_absolute_e ..." ... [TRUNCATED] 
+
+> # ---------------------------
+> # MODEL TRAINING
+> # ---------------------------
+> history <- model$fit(
++   x = x_train,
++   y = y_train,
++   epoch .... [TRUNCATED] 
+
+> # ---------------------------
+> # EVALUATE ON TRAINING SET (or on validation/test if you want)
+> # ---------------------------
+> # Evaluate on test  .... [TRUNCATED] 
+[1] 6.065678 6.065678 1.978049
+
+> # Predict on log-scale, then back-transform
+> log_preds_test <- model$predict(x_test)
+
+> preds_test <- as.numeric(exp(log_preds_test))
+
+> # Back-transform actuals
+> actual_test <- test_model$skadkost
+
+> # Calculate performance metrics
+> mae <- mean(abs(preds_test - actual_test))
+
+> rmse <- sqrt(mean((preds_test - actual_test)^2))
+
+> mse <- mean((preds_test - actual_test)^2)
+
+> cat("MAE:", mae, "\n")
+MAE: 20042.01 
+
+> cat("RMSE:", rmse, "\n")
+RMSE: 34371.97 
+
+> cat("MSE:", mse, "\n")
+MSE: 1181432188 
+
+> # Save results to CSV
+> results <- data.frame(
++   units1 = FLAGS$units1,
++   units2 = FLAGS$units2,
++   dropout1 = FLAGS$dropout1,
++   lr = FLAGS$l .... [TRUNCATED] 
+
+> # ---------------------------
+> # SAVE METRICS FOR TFRUNS
+> # ---------------------------
+> 
+> # Append to CSV (create if doesn't exist)
+> metrics_f .... [TRUNCATED] 
+
+> if (!file.exists(metrics_file)) {
++   write.csv(results, metrics_file, row.names = FALSE)
++ } else {
++   write.table(results, metrics_file, sep = ", ..." ... [TRUNCATED] 

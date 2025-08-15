@@ -1,0 +1,12 @@
+{
+  "units1": 64,
+  "units2": 128,
+  "units3": 32,
+  "dropout1": 0.3,
+  "activation": "relu",
+  "final_activation": "relu",
+  "optimizer": "rmsprop",
+  "num_layers": 1,
+  "batch_size": 128,
+  "lr": 0.001
+}

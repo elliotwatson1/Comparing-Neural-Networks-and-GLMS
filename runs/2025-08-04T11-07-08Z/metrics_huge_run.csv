@@ -1,0 +1,2 @@
+"units1","units2","units3","num_layers","dropout1","activation","final_activation","optimizer","lr","batch_size","mae","rmse","mse"
+64,32,16,1,0.2,"relu","relu","adam",0.001,128,22274.1637272293,36269.5134141123,1315477603.29647

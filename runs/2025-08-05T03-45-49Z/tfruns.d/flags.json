@@ -1,0 +1,12 @@
+{
+  "units1": 256,
+  "units2": 64,
+  "units3": 16,
+  "dropout1": 0.3,
+  "activation": "elu",
+  "final_activation": "relu",
+  "optimizer": "adam",
+  "num_layers": 3,
+  "batch_size": 128,
+  "lr": 0.001
+}

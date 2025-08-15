@@ -1,0 +1,108 @@
+
+> library(keras)
+
+> library(tfruns)
+
+> library(dplyr)
+
+> library(reticulate)
+
+> np <- import("numpy")
+
+> # Define custom Gamma deviance loss
+> gamma_loss <- function(y_true, y_pred){
++   K <- backend()
++   y_true <- K$clip(y_true, K$epsilon(), K$cast_to .... [TRUNCATED] 
+
+> FLAGS <- flags(
++   flag_integer("units1", 64),
++   flag_integer("units2", 32),
++   flag_integer("units3", 16), # optional third layer
++   flag_nume .... [TRUNCATED] 
+
+> # ---------------------------
+> # Build model dynamically
+> # ---------------------------
+> model <- keras_model_sequential()
+
+> model$add(layer_dense(units = FLAGS$units1, activation = FLAGS$activation, input_shape = c(ncol(x_train))))
+
+> model$add(layer_dropout(rate = FLAGS$dropout1))
+
+> if (FLAGS$num_layers >= 2) {
++   model$add(layer_dense(units = FLAGS$units2, activation = FLAGS$activation))
++ }
+
+> if (FLAGS$num_layers == 3) {
++   model$add(layer_dense(units = FLAGS$units3, activation = FLAGS$activation))
++ }
+
+> # Final output layer
+> model$add(layer_dense(units = 1, activation = FLAGS$final_activation))
+
+> # Select optimizer
+> opt <- switch(FLAGS$optimizer,
++               "adam" = optimizer_adam(learning_rate = FLAGS$lr),
++               "rmsprop" = o .... [TRUNCATED] 
+
+> model$compile(
++   loss = gamma_loss,
++   optimizer = opt,
++   metrics = list("mean_squared_error", "mean_absolute_error")
++ )
+
+> # Fix: Convert inputs/targets to correct shape
+> # Convert to float32
+> x_train <- np$array(x_train, dtype = "float32")
+
+> y_train <- np$array(y_train, dtype = "float32")
+
+> x_test <- np$array(x_test, dtype = "float32")
+
+> y_test <- np$array(y_test, dtype = "float32")
+
+> # ---------------------------
+> history <- model$fit(
++   x = x_train,
++   y = y_train,
++   epochs = as.integer(300),
++   batch_size = FLAGS$batch_s .... [TRUNCATED] 
+
+> # ---------------------------
+> model$evaluate(x_test, y_test, verbose = 0)
+[1] 2.600120e+01          Inf 1.677598e+24
+
+> raw_preds_test <- model$predict(x_test)
+
+> preds_test <- as.numeric(raw_preds_test)       
+
+> actual_test <- test_model$skadkost
+
+> mae <- mean(abs(preds_test - actual_test))
+
+> rmse <- sqrt(mean((preds_test - actual_test)^2))
+
+> mse <- mean((preds_test - actual_test)^2)
+
+> cat("MAE:", mae, "\n")
+MAE: 1.677598e+24 
+
+> cat("RMSE:", rmse, "\n")
+RMSE: 1.703251e+24 
+
+> cat("MSE:", mse, "\n")
+MSE: 2.901065e+48 
+
+> results <- data.frame(
++   units1 = FLAGS$units1,
++   units2 = FLAGS$units2,
++   units3 = FLAGS$units3,
++   num_layers = FLAGS$num_layers,
++   dropo .... [TRUNCATED] 
+
+> metrics_file <- "metrics_huge_run.csv"
+
+> if (!file.exists(metrics_file)) {
++   write.csv(results, metrics_file, row.names = FALSE)
++ } else {
++   write.table(results, metrics_file, sep = ", ..." ... [TRUNCATED] 

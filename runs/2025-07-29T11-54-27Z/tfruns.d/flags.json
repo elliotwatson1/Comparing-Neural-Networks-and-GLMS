@@ -1,0 +1,7 @@
+{
+  "units1": 64,
+  "units2": 32,
+  "dropout1": 0.3,
+  "lr": 0.001,
+  "batch_size": 256
+}
