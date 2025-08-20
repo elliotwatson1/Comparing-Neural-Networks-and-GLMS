@@ -880,6 +880,7 @@ runs <- tuning_run("train_model.R",
 # NOW USING THE BEST VALUES FOUND IN LONG RUN
 #################################################################################
 library(insuranceData)
+library(dplyr)
 
 data(dataOhlsson)
 data = dataOhlsson
@@ -896,11 +897,11 @@ train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE) # 80:20
 train_data <- data[train_index, ]
 test_data <- data[-train_index, ]
 
-# installed.packages("keras")
-# library(reticulate)
-# use_condaenv("r-tensorflow", required = TRUE)
-# library(keras)
-# library(tensorflow)
+installed.packages("keras")
+library(reticulate)
+use_condaenv("r-tensorflow", required = TRUE)
+library(keras)
+library(tensorflow)
 
 # plot_model <- import("tensorflow.keras.utils")$plot_model
 
@@ -915,8 +916,8 @@ test_data <- data[-train_index, ]
 # Select same variables
 vars <- c("skadkost", "agarald", "kon", "zon", "mcklass", "fordald", "bonuskl")
 
-train_model <- train_data %>% select(all_of(vars))
-test_model <- test_data %>% select(all_of(vars))
+train_model <- train_data[, vars]
+test_model  <- test_data[, vars]
 
 # Create design matrices
 train_model <- model.matrix(skadkost ~ . -1, train_model) %>% as.data.frame()
@@ -932,31 +933,26 @@ test_model$log_duration <- log(test_data$duration)
 normalise_train <- function(x) (x - min(x)) / (max(x) - min(x))
 
 # Normalise training data
-train_features <- train_model %>% select(-skadkost) %>% mutate_all(normalise_train)
+train_features <- train_model %>% dplyr::select(-skadkost) %>% dplyr::mutate_all(normalise_train)
 
 # Capture min/max for each variable
-mins <- sapply(train_model %>% select(-skadkost), min)
-maxs <- sapply(train_model %>% select(-skadkost), max)
+mins <- sapply(train_model %>% dplyr::select(-skadkost), min)
+maxs <- sapply(train_model %>% dplyr::select(-skadkost), max)
 
 # Apply same scaling to test set
 normalise_test <- function(x, varname) (x - mins[varname]) / (maxs[varname] - mins[varname])
 test_features <- test_model %>%
-  select(-skadkost) %>%
+  dplyr::select(-skadkost) %>%
   mutate(across(everything(), ~ normalise_test(.x, cur_column())))
 
 x_train <- as.matrix(train_features)
-y_train <- log(train_model$skadkost)
+y_train <- log(train_model$skadkost / train_data$duration)
 y_train_raw <- train_model$skadkost
 
 x_test <- as.matrix(test_features)
-y_test <- log(test_model$skadkost)
+y_test  <- log(test_model$skadkost / test_data$duration)
 y_test_raw <- test_model$skadkost
 
-x_train <- np_array(x_train)
-y_train <- np_array(y_train)
-
-x_test <- np_array(x_test)
-y_test <- np_array(y_test)
 
 library(reticulate)
 
@@ -1008,13 +1004,14 @@ model$evaluate(x_test, y_test)
 
 
 # Predict log(skadkost)
-log_preds_test <- model$predict(x_test)
+log_preds_test <- model$predict(x_test)        # model output
+preds_test <- exp(log_preds_test) 
 
 # Transform back to original scale
-preds_test <- exp(log_preds_test)
-actual_test <- test_model$skadkost  # Already in original scale
+# preds_test_avg <- exp(log_preds_test)              # average per unit exposure
+# preds_test_total <- preds_test_avg * test_data$duration
+actual_test <- test_model$skadkost / test_data$duration
 
-# Compute metrics
 mae <- mean(abs(preds_test - actual_test))
 mse <- mean((preds_test - actual_test)^2)
 rmse <- sqrt(mse)
