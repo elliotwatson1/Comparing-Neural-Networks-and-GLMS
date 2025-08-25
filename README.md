@@ -1,12 +1,12 @@
 
-# Comparing Gamma Generalized Linear Models and Neural Networks for Predicting Insurance Claim Costs
+# Code and Resources for "From Generalised Linear Models to Neural Networks: Modelling Insurance Claim Costs with Traditional and Modern Approaches"
 
 [![R-CMD-check](https://github.com/elliotwatson1/Comparing-Neural-Networks-and-GLMS/workflows/R-CMD-check/badge.svg)](https://github.com/elliotwatson1/Comparing-Neural-Networks-and-GLMS/actions)
 [![R Version](https://www.r-pkg.org/badges/version/insuranceData)](https://cran.r-project.org/package=insuranceData)
 
 This repository contains all the code used to produce the results presented in the dissertation titled:
 
-**“Comparing Gamma Generalized Linear Models and Neural Networks for Predicting Insurance Claim Costs.”**
+**“From Generalised Linear Models to Neural Networks: Modelling Insurance Claim Costs with Traditional and Modern Approaches”**
 
 ---
 
@@ -22,7 +22,7 @@ This repository contains all the code used to produce the results presented in t
 
 ## Dataset
 
-The dataset used throughout the study is `dataOhlsson` from the R package **insuranceData**:
+The study uses the `dataOhlsson` dataset from the **insuranceData** R package, which provides Swedish motor insurance claim data. It can be found at:
 [View Dataset Documentation](https://cran.r-project.org/web/packages/insuranceData/insuranceData.pdf)
 
 ---
@@ -30,15 +30,13 @@ The dataset used throughout the study is `dataOhlsson` from the R package **insu
 ## Repository Structure
 
 ```
-.
-├── Images/             # All images generated throughout the study
-├── Statistics/         # Large file with neural network metrics
-├── runs/               # Files for use with the R library tfruns
-├── initial_exploration.R   # Main research and exploratory analysis
-├── metrics_huge_run.csv    # Metrics for all neural network combinations
-├── more_models.R            # Code for further explorations chapter
-├── sweden_maps.R            # Code for generating maps
-├── train_model.R            # Hyperparameter tuning and training neural networks
+├── Images/                 # Figures and plots generated in the analysis
+├── Statistics/             # Neural network performance metrics (large file)
+├── runs/                   # Training logs for the R package tfruns
+├── initial_exploration.R   # Exploratory analysis and main model file
+├── more_models.R           # Code supporting the “Further Explorations” chapter
+├── sweden_maps.R           # Script for generating Swedish insurance maps
+├── train_model.R           # Neural network training and hyperparameter tuning
 ```
 
 ---
