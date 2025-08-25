@@ -1,4 +1,4 @@
-# Step 1: Load libraries
+# Load libraries
 library(insuranceData)
 library(neuralnet)
 library(fastDummies)  # For one-hot encoding
@@ -107,7 +107,6 @@ data %>%
   theme_minimal() +
   labs(title = "Correlation Matrix of Numeric Variables")
 
-# Claim Frequency and Cost by Gender, Zone, and MC Class (already in your code)
 
 # Zero inflation check
 zero_freq <- mean(data$antskad == 0)
@@ -126,7 +125,7 @@ data %>%
   labs(title = "Average Claim Count by Driver Age Group", x = "Age Group", y = "Mean Claims")
 
 
-# 1. Average claim frequency and cost by Gender
+# Average claim frequency and cost by Gender
 p1_freq <- ggplot(data, aes(x = kon, y = antskad)) +
   stat_summary(fun = mean, geom = "bar", fill = "steelblue") +
   labs(title = "Average Claim Frequency by Gender", x = "Gender", y = "Mean Claims")
@@ -137,7 +136,7 @@ p1_cost <- ggplot(data, aes(x = kon, y = skadkost)) +
 
 grid_gender <- grid.arrange(p1_freq, p1_cost, ncol = 2)
 
-# 2. Average claim frequency and cost by Zone
+# Average claim frequency and cost by Zone
 p2_freq <- ggplot(data, aes(x = factor(zon), y = antskad)) +
   stat_summary(fun = mean, geom = "bar", fill = "darkorange") +
   labs(title = "Average Claim Frequency by Zone", x = "Zone", y = "Mean Claims")
@@ -148,7 +147,7 @@ p2_cost <- ggplot(data, aes(x = factor(zon), y = skadkost)) +
 
 grid_zone <- grid.arrange(p2_freq, p2_cost, ncol = 2)
 
-# 3. Average claim frequency and cost by Motorcycle Class
+# Average claim frequency and cost by Motorcycle Class
 p3_freq <- ggplot(data, aes(x = factor(mcklass), y = antskad)) +
   stat_summary(fun = mean, geom = "bar", fill = "seagreen") +
   labs(title = "Average Claim Frequency by Motorcycle Class", x = "MC Class", y = "Mean Claims")
@@ -184,12 +183,8 @@ fit_gamma <- fitdist(skadkost_nonzero, "gamma")
 summary(fit_gamma)
 plot(fit_gamma)
 
-## END OF EDA SECTION
-
 # Some tests to see if the data is Gamma distributed
-# ---- Goodness-of-fit tests ----
-
-# 1. Poisson fit for claim frequency
+# Poisson fit for claim frequency
 # Chi-square goodness-of-fit test
 observed_counts <- table(data$antskad)
 lambda_hat <- mean(data$antskad)
@@ -209,7 +204,7 @@ while(any(expected_counts < 5)) {
 chisq_test <- chisq.test(observed_counts, p = expected_counts / sum(expected_counts))
 chisq_test
 
-# 2. Gamma fit for positive claim costs
+# Gamma fit for positive claim costs
 # Kolmogorov–Smirnov test
 # Kolmogorov–Smirnov test for Gamma fit
 ks_test_gamma <- ks.test(
@@ -226,15 +221,15 @@ gof_results
 
 
 
+
+
 ####################################################################################################################
 ################################# BEGINNING OF GLM SECTION #########################################################
 ####################################################################################################################
 
 ############################ FREQUENCY MODELLING ###################################################################
 
-# -------------------------------
 # Claim Frequency Modelling (Poisson GLM)
-# -------------------------------
 
 # Keep all policies with positive exposure (duration)
 data <- data[data$duration > 0, ]
@@ -368,7 +363,7 @@ sapply(data[, c("skadkost", "agarald", "fordald", "bonuskl", "kon", "zon", "mckl
        function(x) any(!is.finite(x)))
 
 # Data split
-set.seed(123) # for reproducibility
+set.seed(123) 
 train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE) # 80:20 split
 train_data <- data[train_index, ]
 test_data <- data[-train_index, ]
@@ -384,7 +379,7 @@ X <- model.matrix(
 )
 
 summary(X)
-ncol(X) # Should be 17 (intercept + predictors, including dummy variables)
+ncol(X) 
 any(!is.finite(X)) # Should be FALSE
 qr(X)$rank == ncol(X) # Should be TRUE for full rank
 
@@ -534,17 +529,17 @@ ggplot(deviance_df, aes(x = pred_bin, y = total_dev)) +
   ) +
   theme_minimal()
 
-# 1. Get predictions on test set
+# Get predictions on test set
 mu_test <- predict(glm_gamma, newdata = test_data, type = "response")
 y_test <- test_data$skadkost
 
-# 2. Compute out-of-sample deviance for Gamma GLM (log link)
+# Compute out-of-sample deviance for Gamma GLM (log link)
 test_deviance <- 2 * sum((y_test - mu_test) / mu_test - log(y_test / mu_test))
 
-# 3. Add predictions to test_data for plotting
+# Add predictions to test_data for plotting
 test_data$predicted <- mu_test
 
-# 4. Plot Actual vs Predicted (log scale) + deviance overlay
+# Plot Actual vs Predicted (log scale) + deviance overlay
 library(ggplot2)
 
 ggplot(test_data, aes(x = skadkost, y = predicted)) +
@@ -587,7 +582,7 @@ head(data)
 data <- data[data$skadkost > 0 & data$duration > 0, ]
 
 # Data split
-set.seed(123) # for reproducibility
+set.seed(123) 
 train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE) # 80:20 split
 train_data <- data[train_index, ]
 test_data <- data[-train_index, ]
@@ -720,7 +715,7 @@ if (any(actual_test <= 0) || any(preds_test <= 0)) {
 gamma_deviance_nn <- 2 * sum(((actual_test - preds_test) / preds_test) - log(actual_test / preds_test))
 cat("Gamma Deviance (Neural Network):", gamma_deviance_nn, "\n")
 
-# Visualize
+# Visualise
 plot_df <- data.frame(
   Actual = actual_test,
   Predicted = preds_test
@@ -784,7 +779,7 @@ compare_metrics <- function(preds, actual, label){
 compare_metrics(preds_mse, actual, "MSE")
 compare_metrics(preds_gamma, actual, "Gamma")
 
-###################### TESTING ##################################################
+###################### HYPERPARAMETER TUNING ##################################################
 
 library(insuranceData)
 
@@ -798,13 +793,11 @@ head(data)
 data <- data[data$skadkost > 0 & data$duration > 0, ]
 
 # Data split
-set.seed(123) # for reproducibility
+set.seed(123)
 train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE) # 80:20 split
 train_data <- data[train_index, ]
 test_data <- data[-train_index, ]
-# ---------------------------
 
-# Select same variables
 vars <- c("skadkost", "agarald", "kon", "zon", "mcklass", "fordald", "bonuskl")
 
 train_model <- train_data %>% select(all_of(vars))
@@ -836,7 +829,7 @@ test_features <- test_model %>%
   select(-skadkost) %>%
   mutate(across(everything(), ~ normalise_test(.x, cur_column())))
 
-# Normalize features as before
+# Normalise features as before
 train_features <- train_model %>% select(-skadkost) %>% mutate_all(normalise_train)
 test_features <- test_model %>% select(-skadkost) %>% mutate(across(everything(), ~ normalise_test(.x, cur_column())))
 
@@ -892,7 +885,7 @@ head(data)
 data <- data[data$skadkost > 0 & data$duration > 0, ]
 
 # Data split
-set.seed(123) # for reproducibility
+set.seed(123) 
 train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE) # 80:20 split
 train_data <- data[train_index, ]
 test_data <- data[-train_index, ]
@@ -903,17 +896,6 @@ use_condaenv("r-tensorflow", required = TRUE)
 library(keras)
 library(tensorflow)
 
-# plot_model <- import("tensorflow.keras.utils")$plot_model
-
-# tf$constant("TensorFlow is working!")
-
-# install_tensorflow()
-
-# py_install(c("pydot", "graphviz"))
-
-# tf$config$list_physical_devices()
-
-# Select same variables
 vars <- c("skadkost", "agarald", "kon", "zon", "mcklass", "fordald", "bonuskl")
 
 train_model <- train_data[, vars]
@@ -952,7 +934,6 @@ y_train_raw <- train_model$skadkost
 x_test <- as.matrix(test_features)
 y_test  <- log(test_model$skadkost / test_data$duration)
 y_test_raw <- test_model$skadkost
-
 
 library(reticulate)
 
@@ -1002,15 +983,11 @@ history <- model$fit(
 
 model$evaluate(x_test, y_test)
 
-
 # Predict log(skadkost)
 log_preds_test <- model$predict(x_test)        # model output
 preds_test <- exp(log_preds_test) 
 
-# Transform back to original scale
-# preds_test_avg <- exp(log_preds_test)              # average per unit exposure
-# preds_test_total <- preds_test_avg * test_data$duration
-actual_test <- test_model$skadkost / test_data$duration
+actual_test <- test_model$skadkost / test_data$duration # account for exposure
 
 mae <- mean(abs(preds_test - actual_test))
 mse <- mean((preds_test - actual_test)^2)
@@ -1051,8 +1028,6 @@ loglik_null <- sum(dgamma(y, shape = 1, scale = mu_null, log = TRUE))
 pseudo_r2 <- 1 - (loglik_model / loglik_null)
 
 cat("McFadden's Pseudo R²:", round(pseudo_r2, 4), "\n")
-
-
 
 # Create a single data frame with all metrics
 df <- data.frame(
@@ -1098,11 +1073,11 @@ head(data)
 data <- data[data$skadkost > 0 & data$duration > 0, ]
 
 # Data split
-set.seed(123) # for reproducibility
+set.seed(123)
 train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE) # 80:20 split
 train_data <- data[train_index, ]
 test_data <- data[-train_index, ]
-# Select same variables
+
 vars <- c("skadkost", "agarald", "kon", "zon", "mcklass", "fordald", "bonuskl")
 
 train_model <- train_data %>% select(all_of(vars))
@@ -1198,11 +1173,10 @@ history <- model$fit(
 model$evaluate(x_test, y_test)
 
 # Predict log(skadkost)
-log_preds_test <- model$predict(x_test)
+log_preds_test <- model$predict(x_test)        # model output
+preds_test <- exp(log_preds_test) 
 
-# Transform back to original scale
-preds_test <- exp(log_preds_test)
-actual_test <- test_model$skadkost  # Already in original scale
+actual_test <- test_model$skadkost / test_data$duration # account for exposure
 
 # Compute metrics
 mae <- mean(abs(preds_test - actual_test))
@@ -1244,191 +1218,4 @@ loglik_null <- sum(dgamma(y, shape = 1, scale = mu_null, log = TRUE))
 pseudo_r2 <- 1 - (loglik_model / loglik_null)
 
 cat("McFadden's Pseudo R²:", round(pseudo_r2, 4), "\n")
-
-
-####################################################################################################################
-####################################################################################################################
-####################################################################################################################
-####################################################################################################################
-####################################################################################################################
-####################################################################################################################
-
-deviance_resid_nn <- sign(y_obs - y_hat) * sqrt(2 * ((y_obs - y_hat)/y_hat - log(y_obs / y_hat)))
-
-std_resid_nn <- deviance_resid_nn / sd(deviance_resid_nn)
-
-# Approximate leverage as normalized influence: (r_i^2) / sum(r_i^2)
-leverage_approx <- (std_resid_nn^2) / sum(std_resid_nn^2)
-
-# Approximate Cook's D (not exact for NN):
-cooksd_approx <- (std_resid_nn^2 * leverage_approx) / (length(y_obs) * mean(std_resid_nn^2))
-
-pchisq(sum(deviance_resid_nn^2), df = length(y_obs) - ncol(x_train), lower.tail = FALSE)
-
-threshold <- 4 / length(y_obs)
-influential_points <- which(cooksd_approx > threshold)
-print(influential_points)
-
-plot(y_hat, deviance_resid_nn, pch = 20, col = "#1E90FF",
-     main = "Deviance Residuals vs Fitted (NN)",
-     xlab = "Fitted Values", ylab = "Deviance Residuals")
-abline(h = 0, col = "red", lty = 2)
-
-plot(y_hat, std_resid_nn, pch = 20, col = "#1E90FF",
-     main = "Standardised Residuals vs Fitted (NN)",
-     xlab = "Fitted Values", ylab = "Standardised Residuals")
-abline(h = 0, col = "red", lty = 2)
-
-plot(leverage_approx, pch = 20, col = "#1E90FF",
-     main = "Approximate Leverage (NN)",
-     ylab = "Leverage")
-abline(h = 2 * mean(leverage_approx), col = "red", lty = 2)
-
-plot(cooksd_approx, pch = 20, col = "#1E90FF",
-     main = "Approximate Cook’s Distance (NN)",
-     ylab = "Cook’s Distance")
-abline(h = threshold, col = "red", lty = 2)
-
-####################################################################################################################
-####################################################################################################################
-####################################################################################################################
-#####################################################FOR LANPENG####################################################
-####################################################################################################################
-####################################################################################################################
-####################################################################################################################
-
-# ------------------------------
-# 1. Load and prepare data
-# ------------------------------
-data(dataOhlsson)
-data <- dataOhlsson
-data <- data[data$skadkost > 0 & data$duration > 0, ]
-
-# Train/test split
-set.seed(123)
-train_index <- createDataPartition(data$skadkost, p = 0.8, list = FALSE)
-train_data <- data[train_index, ]
-test_data <- data[-train_index, ]
-
-# Variables to use
-vars <- c("skadkost", "agarald", "kon", "zon", "mcklass", "fordald", "bonuskl")
-
-train_model <- train_data %>% select(all_of(vars))
-test_model  <- test_data %>% select(all_of(vars))
-
-# One-hot encode categorical vars
-train_model <- model.matrix(skadkost ~ . -1, train_model) %>% as.data.frame()
-train_model$skadkost <- train_data$skadkost
-
-test_model <- model.matrix(skadkost ~ . -1, test_model) %>% as.data.frame()
-test_model$skadkost <- test_data$skadkost
-
-# Add log(duration)
-train_model$log_duration <- log(train_data$duration)
-test_model$log_duration <- log(test_data$duration)
-
-# Normalise features
-normalise_train <- function(x) (x - min(x)) / (max(x) - min(x))
-train_features <- train_model %>% select(-skadkost) %>% mutate_all(normalise_train)
-
-mins <- sapply(train_model %>% select(-skadkost), min)
-maxs <- sapply(train_model %>% select(-skadkost), max)
-
-normalise_test <- function(x, varname) (x - mins[varname]) / (maxs[varname] - mins[varname])
-test_features <- test_model %>%
-  select(-skadkost) %>%
-  mutate(across(everything(), ~ normalise_test(.x, cur_column())))
-
-# Numpy arrays
-np <- import("numpy")
-x_train <- np$array(as.matrix(train_features))
-y_train <- np$array(train_model$skadkost)
-x_test  <- np$array(as.matrix(test_features))
-y_test  <- np$array(test_model$skadkost)
-
-# ------------------------------
-# 2. Custom Gamma NLL loss
-# ------------------------------
-gamma_nll <- function(y_true, y_pred) {
-  K <- backend()
-  mu <- K$exp(y_pred[, 1])    # mean parameter μ > 0
-  phi <- K$exp(y_pred[, 2])   # dispersion parameter φ > 0
-  
-  eps <- K$epsilon()
-  y_true <- K$clip(y_true, eps, 1e10)
-  
-  # Negative log-likelihood for Gamma with mean μ and dispersion φ
-  term1 <- - (1/phi) * K$log(y_true / mu)
-  term2 <- - K$log(phi * mu)
-  term3 <- (y_true - mu) / (phi * mu)
-  
-  loss <- term1 + term2 + term3
-  K$mean(loss, axis = as.integer(-1))  # ensure axis is integer
-}
-
-# ------------------------------
-# 3. Build model with parameter outputs
-# ------------------------------
-model <- keras_model_sequential()
-model$add(layer_input(shape = c(ncol(x_train))))
-model$add(layer_dense(units = 256, activation = "relu"))
-model$add(layer_dropout(rate = 0.2))
-model$add(layer_dense(units = 128, activation = "relu"))
-model$add(layer_dense(units = 64, activation = "relu"))
-model$add(layer_dense(units = 2, activation = "linear"))  # μ and φ outputs
-
-model$compile(
-  loss = gamma_nll,
-  optimizer = optimizer_rmsprop(learning_rate = 0.001)
-)
-
-# ------------------------------
-# 4. Train model
-# ------------------------------
-history <- model$fit(
-  x = x_train,
-  y = y_train,
-  epochs = as.integer(100),
-  batch_size = as.integer(128),
-  validation_split = 0.2,
-  callbacks = list(
-    callback_early_stopping(patience = 10, restore_best_weights = TRUE)
-  )
-)
-
-# ------------------------------
-# 5. Evaluate and predict
-# ------------------------------
-model$evaluate(x_test, y_test)
-
-preds_params <- model$predict(x_test)
-mu_preds <- exp(preds_params[, 1])   # mean severity
-phi_preds <- exp(preds_params[, 2])  # dispersion
-
-# Metrics for μ
-mae <- mean(abs(mu_preds - y_test))
-mse <- mean((mu_preds - y_test)^2)
-rmse <- sqrt(mse)
-
-cat("MAE:", round(mae, 2), "\n")
-cat("MSE:", round(mse, 2), "\n")
-cat("RMSE:", round(rmse, 2), "\n")
-
-# ------------------------------
-# 6. Plot results
-# ------------------------------
-plot_df <- data.frame(
-  Actual = as.numeric(y_test),
-  Predicted = as.numeric(mu_preds)
-)
-
-ggplot(plot_df, aes(x = Actual, y = Predicted)) +
-  geom_point(alpha = 0.4) +
-  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
-  labs(
-    title = "Actual vs Predicted Claim Costs (Mean Parameter μ)",
-    x = "Actual skadkost",
-    y = "Predicted skadkost (μ)"
-  ) +
-  theme_minimal()
 

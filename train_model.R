@@ -27,9 +27,8 @@ FLAGS <- flags(
   flag_numeric("lr", 0.001)
 )
 
-# ---------------------------
 # Build model dynamically
-# ---------------------------
+
 model <- keras_model_sequential()
 model$add(layer_dense(units = FLAGS$units1, activation = FLAGS$activation, input_shape = c(ncol(x_train))))
 model$add(layer_dropout(rate = FLAGS$dropout1))
@@ -57,8 +56,6 @@ model$compile(
   metrics = list("mean_squared_error", "mean_absolute_error")
 )
 
-
-# Fix: Convert inputs/targets to correct shape
 # Convert to float32
 x_train <- np$array(x_train, dtype = "float32")
 y_train <- np$array(y_train, dtype = "float32")
@@ -66,7 +63,6 @@ y_train <- np$array(y_train, dtype = "float32")
 x_test <- np$array(x_test, dtype = "float32")
 y_test <- np$array(y_test, dtype = "float32")
 
-# ---------------------------
 history <- model$fit(
   x = x_train,
   y = y_train,
@@ -77,7 +73,6 @@ history <- model$fit(
   verbose = 0
 )
 
-# ---------------------------
 model$evaluate(x_test, y_test, verbose = 0)
 
 raw_preds_test <- model$predict(x_test)

@@ -12,10 +12,8 @@ library(glm2)
 library(forcats)
 library(brglm2)
 library(e1071)
-library(reticulate)  # If needed for NN
+library(reticulate)  
 library(keras)
-
-
 
 data(dataOhlsson)
 data = dataOhlsson
@@ -99,7 +97,6 @@ mae_glm <- mean(abs(test_data$skadkost - test_data$predicted))
 
 #################################################################################
 # NN
-# Select same variables
 vars <- c("skadkost", "agarald", "kon", "zon", "mcklass", "fordald", "bonuskl")
 
 train_model <- train_data %>% select(all_of(vars))
@@ -185,11 +182,10 @@ model$evaluate(x_test, y_test)
 
 
 # Predict log(skadkost)
-log_preds_test <- model$predict(x_test)
+log_preds_test <- model$predict(x_test)        # model output
+preds_test <- exp(log_preds_test) 
 
-# Transform back to original scale
-preds_test <- exp(log_preds_test)
-actual_test <- test_model$skadkost  # Already in original scale
+actual_test <- test_model$skadkost / test_data$duration # account for exposure
 
 # Compute metrics
 mae_nn <- mean(abs(preds_test - actual_test))
@@ -214,7 +210,6 @@ X <- model.matrix(
   data = train_glm
 )
 
-# Manually create starting values:  
 # intercept = log(mean(skadkost/duration)), rest = zeros
 start_intercept <- log(mean(train_glm$skadkost / train_glm$duration))
 start_vals <- c(start_intercept, rep(0, ncol(X) - 1))
@@ -425,7 +420,7 @@ rmse_hybrid <- sqrt(mse_hybrid)
 #################################################################################
 # GAM + NN
 library(nnet)
-# Step 1: Fit GAM
+# Fit GAM
 gam_model <- gam(
   skadkost ~ 
     s(agarald, k = 5) +       # fewer knots
@@ -437,11 +432,11 @@ gam_model <- gam(
   family = gaussian(link = "log")
 )
 
-# Step 2: Get GAM residuals
+# Get GAM residuals
 gam_preds <- predict(gam_model, newdata = train_data, type = "response")
 residuals_gam <- train_data$skadkost - gam_preds
 
-# Step 3: Train NN on residuals
+# Train NN on residuals
 set.seed(123)
 nn_model <- nnet(
   x = model.matrix(~ agarald + fordald + bonuskl + kon + zon + mcklass, data = train_data),
@@ -452,7 +447,7 @@ nn_model <- nnet(
   trace = FALSE
 )
 
-# Step 4: Predictions (additive: GAM + NN residuals)
+# Predictions (additive: GAM + NN residuals)
 gam_test_preds <- as.numeric(predict(gam_model, newdata = test_data, type = "response"))
 
 nn_test_preds <- as.numeric(predict(
@@ -464,14 +459,14 @@ nn_test_preds <- as.numeric(predict(
 hybrid_preds <- gam_test_preds + nn_test_preds
 
 
-# Step 5: Metrics
+# Metrics
 mae_hybrid_2 <- mean(abs(hybrid_preds - test_data$skadkost))
 mse_hybrid_2 <- mean((hybrid_preds - test_data$skadkost)^2)
 rmse_hybrid_2 <- sqrt(mse_hybrid_2)
 
 #################################################################################
 # GLM + NN + GBM
-# Step 2: Ensemble Stacking GLM + NN + GBM
+# Ensemble Stacking GLM + NN + GBM
 set.seed(123)
 
 # Train control for caret
@@ -528,7 +523,8 @@ mae_ens <- mean(abs(preds_ensemble - test_caret$skadkost))
 mse_ens <- mean((preds_ensemble - test_caret$skadkost)^2)
 rmse_ens <- sqrt(mse_ens)
 
-
+#################################################################################
+# Printing all the results
 results <- data.frame(
   Model = c("GAMMA GLM", "NN Gamma", "INV GAUSS GLM", "GAM", "GLM LOGNORMAL", "RANDOM FOREST","GBM", "SVR", "HYBRID GLM + NN", "HYBRID GAM + NN", "GLM + NN + GAM"),  # Add your models
   MAE = c(mae_glm, mae_nn, mae_in, mae_gam, mae_lognorm, mae_rf, mae_gbm, mae_svr, mae_hybrid, mae_hybrid_2, mae_ens),

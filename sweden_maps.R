@@ -9,11 +9,11 @@ library(rnaturalearthdata)
 ####################################################################################################################
 # Count map data
 
-# --- 1. Download Sweden counties (GADM level 1) ---
+# Download Sweden counties (GADM level 1) 
 sweden_counties <- gadm(country = "SWE", level = 1, path = tempdir())
 sweden_counties_sf <- st_as_sf(sweden_counties)
 
-# --- 2. Create a county-to-zone mapping ---
+# Create a county-to-zone mapping 
 county_zone_map <- tibble(
   NAME_1 = c("Stockholm", "Västra Götaland", "Skåne", "Uppsala", "Södermanland", "Östergötland",
              "Jönköping", "Kronoberg", "Kalmar", "Gotland", "Blekinge", "Halland", "Värmland",
@@ -25,12 +25,12 @@ county_zone_map <- tibble(
 # Merge zone info into county shapefile
 sweden_counties_sf <- left_join(sweden_counties_sf, county_zone_map, by = "NAME_1")
 
-# --- 3. Aggregate Ohlsson data by zone ---
+# Aggregate Ohlsson data by zone
 zone_counts <- dataOhlsson %>%
   group_by(zon) %>%
   summarise(count = n(), .groups = "drop")
 
-# --- 4. Merge Ohlsson counts with county shapefile ---
+# Merge Ohlsson counts with county shapefile 
 # Summarise counts per county by matching zon to county Zone
 county_counts <- sweden_counties_sf %>%
   left_join(zone_counts, by = c("Zone" = "zon"))
@@ -38,12 +38,12 @@ county_counts <- sweden_counties_sf %>%
 # Replace NA counts with 0
 county_counts$count[is.na(county_counts$count)] <- 0
 
-# --- 5. Optional: add major cities ---
+# add major cities 
 cities <- ne_download(scale = "medium", type = "populated_places", category = "cultural", returnclass = "sf")
 sweden <- ne_countries(scale = "medium", country = "Sweden", returnclass = "sf")
 sweden_cities <- st_intersection(cities, sweden)  # keep only cities in Sweden
 
-# --- 6. Plot choropleth map ---
+# Plot choropleth map 
 ggplot() +
   geom_sf(data = county_counts, aes(fill = count), color = "black") +
   scale_fill_viridis_c(option = "plasma", name = "Count") +
@@ -112,7 +112,7 @@ ggplot(county_freq) +
   theme_minimal()
 
 ####################################################################################################################
-# Facet map by motorcycle class - unsure what this is double check
+# Facet map by motorcycle class 
 zone_mcklass <- dataOhlsson %>%
   group_by(zon, mcklass) %>%
   summarise(freq = sum(antskad) / sum(duration), .groups = "drop")
